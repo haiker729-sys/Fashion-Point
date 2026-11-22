@@ -1,0 +1,52 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Default deny everything outside explicit asset folders
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Verified bootstrap admin or active admin record in Firestore default/named DB
+    // Note: If using a named Firestore database, deploy custom claims or verify via bootstrap email.
+    function isAdminUploader() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && (
+          request.auth.token.email == 'merajalam906090@gmail.com'
+          || request.auth.token.admin == true
+        );
+    }
+
+    function isAllowedImage() {
+      return request.resource != null
+        && request.resource.size > 0
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // Product photography: products/{productId}/{fileName}
+    match /products/{productId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdminUploader() && isAllowedImage();
+      allow delete: if isAdminUploader();
+    }
+
+    // Category banners: categories/{categoryId}/{fileName}
+    match /categories/{categoryId}/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdminUploader() && isAllowedImage();
+      allow delete: if isAdminUploader();
+    }
+
+    // 3D Showroom assets: showroom/assets/{fileName}
+    match /showroom/assets/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdminUploader() && isAllowedImage();
+      allow delete: if isAdminUploader();
+    }
+  }
+}

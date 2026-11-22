@@ -1,0 +1,483 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Clothing product in the 3D Jummo Fashion World catalog with variants, images, INR pricing, and 3D showroom placement.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique product document ID" },
+        "name": { "type": "string", "description": "Product display name" },
+        "slug": { "type": "string", "description": "URL-safe product slug" },
+        "sku": { "type": "string", "description": "Unique product SKU" },
+        "description": { "type": "string", "description": "Detailed product description" },
+        "categoryId": { "type": "string", "description": "Reference ID in categories collection" },
+        "subcategoryId": { "type": "string", "description": "Subcategory ID under main category" },
+        "brand": { "type": "string", "description": "Fashion brand or atelier label" },
+        "originalPrice": { "type": "number", "description": "MRP price in INR" },
+        "sellingPrice": { "type": "number", "description": "Selling price in INR (<= originalPrice)" },
+        "discountPercentage": { "type": "number", "description": "Computed percentage off (0-95)" },
+        "salePrice": { "type": "number", "description": "Optional flash sale price in INR (0 when unused)" },
+        "taxInfoPlaceholder": { "type": "string", "description": "Tax note placeholder" },
+        "images": { "type": "array", "description": "Ordered list of product image asset objects with Firebase Storage or verified URLs" },
+        "variants": { "type": "array", "description": "Colour x Size variant inventory entries" },
+        "tags": { "type": "array", "description": "Search and collection tags" },
+        "fabric": { "type": "string", "description": "Fabric composition" },
+        "weight": { "type": "string", "description": "Garment weight" },
+        "featured": { "type": "boolean", "description": "Featured merchandising flag" },
+        "bestSeller": { "type": "boolean", "description": "Best-seller flag" },
+        "newArrival": { "type": "boolean", "description": "New arrival flag" },
+        "trending": { "type": "boolean", "description": "Trending flag" },
+        "discountCollection": { "type": "boolean", "description": "Discount collection flag" },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"] },
+        "lowStockThreshold": { "type": "number", "description": "Units threshold for low stock warning" },
+        "rating": { "type": "number", "description": "Average rating (0-5)" },
+        "reviewCount": { "type": "number", "description": "Number of customer reviews" },
+        "showroomPlacement": { "type": "object", "description": "3D Showroom rack, slot, archetype, and spatial coordinates" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Firestore server timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Firestore server timestamp" }
+      },
+      "required": [
+        "id", "name", "slug", "sku", "description", "categoryId", "subcategoryId", "brand",
+        "originalPrice", "sellingPrice", "discountPercentage", "salePrice", "taxInfoPlaceholder",
+        "images", "variants", "tags", "fabric", "weight", "featured", "bestSeller", "newArrival",
+        "trending", "discountCollection", "status", "lowStockThreshold", "rating", "reviewCount",
+        "showroomPlacement", "createdAt", "updatedAt"
+      ]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Main fashion department category with nested subcategories.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "departmentKey": {
+          "type": "string",
+          "enum": ["Men", "Women", "Kids", "Traditional Wear", "Collections", "Custom"]
+        },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "isCustom": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["published", "draft", "archived"] },
+        "sortOrder": { "type": "number", "description": "Optional display ordering index (0-9999)" },
+        "subcategories": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "name", "slug", "departmentKey", "description", "image",
+        "isCustom", "status", "subcategories", "createdAt", "updatedAt"
+      ]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private customer profile stored strictly under users/{uid} with optional admin-managed account status and support notes.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "photoURL": { "type": "string" },
+        "phone": { "type": "string" },
+        "role": { "type": "string", "enum": ["customer", "staff", "manager", "accountant", "admin", "super_admin"] },
+        "accountStatus": { "type": "string", "enum": ["active", "suspended", "flagged"] },
+        "supportNotes": { "type": "array", "description": "Admin-managed customer support history entries" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "photoURL", "phone", "role", "createdAt", "updatedAt"]
+    },
+    "CartItem": {
+      "title": "CartItem",
+      "description": "Customer-specific persistent shopping cart or saved-for-later item under users/{uid}/cart/{cartItemId}.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "productImage": { "type": "string" },
+        "sku": { "type": "string" },
+        "selectedSize": { "type": "string" },
+        "selectedColour": { "type": "string" },
+        "quantity": { "type": "number" },
+        "priceSnapshot": { "type": "number" },
+        "addedAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "productId", "productName", "productImage", "sku",
+        "selectedSize", "selectedColour", "quantity", "priceSnapshot",
+        "addedAt", "updatedAt"
+      ]
+    },
+    "SavedAddress": {
+      "title": "SavedAddress",
+      "description": "Customer delivery address saved under users/{uid}/addresses/{addressId}.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "mobile": { "type": "string", "pattern": "^[6-9][0-9]{9}$" },
+        "email": { "type": "string", "format": "email" },
+        "houseFlat": { "type": "string" },
+        "streetArea": { "type": "string" },
+        "landmark": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "pinCode": { "type": "string", "pattern": "^[1-9][0-9]{5}$" },
+        "deliveryInstructions": { "type": "string" },
+        "isDefault": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "fullName", "mobile", "email", "houseFlat", "streetArea",
+        "landmark", "city", "state", "pinCode", "deliveryInstructions",
+        "isDefault", "createdAt", "updatedAt"
+      ]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Promotional discount coupon validated server-side against Cloud Firestore.",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "type": { "type": "string", "enum": ["percentage", "fixed"] },
+        "value": { "type": "number" },
+        "minOrderValue": { "type": "number" },
+        "maxDiscount": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "usageLimit": { "type": "number" },
+        "usedCount": { "type": "number" },
+        "active": { "type": "boolean" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "code", "type", "value", "minOrderValue", "maxDiscount",
+        "startDate", "expiryDate", "usageLimit", "usedCount",
+        "active", "description", "createdAt", "updatedAt"
+      ]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Immutable customer order record stored in orders/{orderId} with verified pricing, delivery address snapshot, status timeline, and internal admin notes.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string" },
+        "customerUid": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string", "format": "email" },
+        "customerPhone": { "type": "string" },
+        "items": { "type": "array" },
+        "deliveryAddress": { "type": "object" },
+        "deliveryMethod": { "type": "string", "enum": ["standard", "express"] },
+        "subtotal": { "type": "number" },
+        "catalogSavings": { "type": "number" },
+        "discount": { "type": "number" },
+        "couponCode": { "type": "string" },
+        "deliveryCharge": { "type": "number" },
+        "tax": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["INR"] },
+        "paymentMethod": { "type": "string", "enum": ["cod", "online"] },
+        "paymentStatus": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Paid",
+            "Failed",
+            "COD Pending",
+            "Payment Processing",
+            "Payment Authorized",
+            "Payment Captured",
+            "Payment Verified",
+            "Payment Failed",
+            "Invalid Signature",
+            "Payment Verification Failed",
+            "Verification Pending",
+            "Refund Initiated",
+            "Refunded",
+            "Partially Refunded"
+          ]
+        },
+        "orderStatus": { "type": "string", "enum": ["Pending", "Confirmed", "Processing", "Packed", "Shipped", "Out for Delivery", "Delivered", "Cancelled"] },
+        "idempotencyKey": { "type": "string" },
+        "razorpayOrderId": { "type": "string", "description": "Optional server-assigned Razorpay Order ID (order_*)" },
+        "latestPaymentId": { "type": "string", "description": "Optional server-assigned latest payment document ID" },
+        "statusHistory": { "type": "array", "description": "Ordered status transition timeline with actor, timestamp, and reason" },
+        "internalNotes": { "type": "array", "description": "Staff/Admin internal operational notes" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "orderId", "customerUid", "customerName", "customerEmail", "customerPhone",
+        "items", "deliveryAddress", "deliveryMethod", "subtotal", "catalogSavings",
+        "discount", "couponCode", "deliveryCharge", "tax", "totalAmount", "currency",
+        "paymentMethod", "paymentStatus", "orderStatus", "idempotencyKey",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Server-verified Razorpay payment transaction record stored in payments/{paymentId}. Never stores card numbers, CVV, UPI PIN, or gateway secrets.",
+      "type": "object",
+      "properties": {
+        "paymentId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "customerUid": { "type": "string" },
+        "razorpayOrderId": { "type": "string" },
+        "razorpayPaymentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["INR"] },
+        "paymentMethod": { "type": "string", "enum": ["razorpay", "upi", "card", "netbanking", "wallet", "online", "cod"] },
+        "paymentStatus": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Payment Processing",
+            "Payment Authorized",
+            "Payment Captured",
+            "Payment Verified",
+            "Payment Failed",
+            "Invalid Signature",
+            "Payment Verification Failed",
+            "Verification Pending",
+            "Refund Initiated",
+            "Refunded",
+            "Partially Refunded",
+            "COD Pending"
+          ]
+        },
+        "signatureVerified": { "type": "boolean" },
+        "gatewayMode": { "type": "string", "enum": ["test", "live"] },
+        "failureReason": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "paymentId", "orderId", "customerUid", "razorpayOrderId", "razorpayPaymentId",
+        "amount", "currency", "paymentMethod", "paymentStatus", "signatureVerified",
+        "gatewayMode", "failureReason", "createdAt", "updatedAt"
+      ]
+    },
+    "Refund": {
+      "title": "Refund",
+      "description": "Admin-initiated Razorpay full or partial refund record stored in refunds/{refundId}.",
+      "type": "object",
+      "properties": {
+        "refundId": { "type": "string" },
+        "paymentId": { "type": "string" },
+        "orderId": { "type": "string" },
+        "customerUid": { "type": "string" },
+        "razorpayPaymentId": { "type": "string" },
+        "razorpayRefundId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "enum": ["INR"] },
+        "type": { "type": "string", "enum": ["full", "partial"] },
+        "reason": { "type": "string" },
+        "refundStatus": { "type": "string", "enum": ["Refund Initiated", "Refunded", "Partially Refunded", "Failed"] },
+        "initiatedByUid": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "refundId", "paymentId", "orderId", "customerUid", "razorpayPaymentId",
+        "razorpayRefundId", "amount", "currency", "type", "reason",
+        "refundStatus", "initiatedByUid", "createdAt", "updatedAt"
+      ]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Server-validated staff and admin authorization record under admins/{uid}. Managed exclusively by super_admin.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "admin", "manager", "staff", "accountant"] },
+        "active": { "type": "boolean" },
+        "permissions": { "type": "array", "description": "Optional granular permission override allowlist" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "role", "active", "createdAt", "updatedAt"]
+    },
+    "InventoryMovement": {
+      "title": "InventoryMovement",
+      "description": "Immutable stock movement and adjustment audit record stored in inventoryHistory/{movementId}.",
+      "type": "object",
+      "properties": {
+        "movementId": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "variantId": { "type": "string" },
+        "variantSku": { "type": "string" },
+        "colour": { "type": "string" },
+        "size": { "type": "string" },
+        "previousStock": { "type": "number" },
+        "delta": { "type": "number" },
+        "newStock": { "type": "number" },
+        "movementType": { "type": "string", "enum": ["manual_adjustment", "restock", "damage", "order_deduction", "return_restock"] },
+        "reason": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "actorName": { "type": "string" },
+        "actorRole": { "type": "string", "enum": ["super_admin", "admin", "manager", "staff", "accountant"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "movementId", "productId", "productName", "variantId", "variantSku",
+        "colour", "size", "previousStock", "delta", "newStock", "movementType",
+        "reason", "actorUid", "actorName", "actorRole", "createdAt"
+      ]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Append-only immutable audit log for administrative and operational actions stored in activityLogs/{logId}.",
+      "type": "object",
+      "properties": {
+        "logId": { "type": "string" },
+        "actorUid": { "type": "string" },
+        "actorEmail": { "type": "string" },
+        "actorName": { "type": "string" },
+        "actorRole": { "type": "string", "enum": ["super_admin", "admin", "manager", "staff", "accountant"] },
+        "action": { "type": "string" },
+        "entityType": { "type": "string" },
+        "entityId": { "type": "string" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "logId", "actorUid", "actorEmail", "actorName", "actorRole",
+        "action", "entityType", "entityId", "summary", "createdAt"
+      ]
+    },
+    "AdminNotification": {
+      "title": "AdminNotification",
+      "description": "Real-event administrative notification document stored in adminNotifications/{notificationId}.",
+      "type": "object",
+      "properties": {
+        "notificationId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["new_order", "payment_success", "payment_failed", "low_stock", "out_of_stock", "refund_request", "order_cancelled", "security_event"]
+        },
+        "severity": { "type": "string", "enum": ["info", "success", "warning", "error"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "entityId": { "type": "string" },
+        "readBy": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "notificationId", "type", "severity", "title", "message",
+        "entityId", "readBy", "createdAt", "updatedAt"
+      ]
+    },
+    "ShowroomSectionDoc": {
+      "title": "ShowroomSectionDoc",
+      "description": "3D Showroom rack layout and lighting configuration document.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sectionId": { "type": "string" },
+        "title": { "type": "string" },
+        "lightingPreset": { "type": "string", "enum": ["warm_luxury", "daylight_atelier", "evening_gala"] },
+        "featuredProductIds": { "type": "array" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "sectionId", "title", "lightingPreset", "featuredProductIds", "active", "createdAt", "updatedAt"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global Fashion World storefront and inventory threshold settings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "storeName": { "type": "string" },
+        "currencyCode": { "type": "string" },
+        "lowStockThreshold": { "type": "number" },
+        "announcementText": { "type": "string" },
+        "showroomDefaultLighting": { "type": "string", "enum": ["warm_luxury", "daylight_atelier", "evening_gala"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id", "storeName", "currencyCode", "lowStockThreshold",
+        "announcementText", "showroomDefaultLighting", "createdAt", "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Published products are publicly readable; draft/archived products and catalog writes require authorized store staff roles."
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "#/entities/Category" },
+      "description": "Published categories are publicly readable; writes require authorized store management roles."
+    },
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private customer profile documents readable/writable by owner or authorized admin; role field immutable by owner; accountStatus and supportNotes writable only by admins."
+    },
+    "/users/{uid}/cart/{cartItemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "Customer-specific persistent shopping cart; strictly readable and writable only by owner."
+    },
+    "/users/{uid}/savedForLater/{itemId}": {
+      "schema": { "$ref": "#/entities/CartItem" },
+      "description": "Customer-specific saved-for-later items; strictly readable and writable only by owner."
+    },
+    "/users/{uid}/addresses/{addressId}": {
+      "schema": { "$ref": "#/entities/SavedAddress" },
+      "description": "Customer-specific delivery addresses with Indian mobile and PIN validation; owner-only."
+    },
+    "/coupons/{couponCode}": {
+      "schema": { "$ref": "#/entities/Coupon" },
+      "description": "Discount coupon definitions; authenticated single-code lookup allowed, admin-only listing and CRUD."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Customer orders with strict ownership privacy, server-enforced totals/delivery/coupon/status invariants, immutable for customers, authorized status & note updates."
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/Payment" },
+      "description": "Server-verified Razorpay payment records; owner/accountant/admin read-only, strictly admin/server writes, zero card/CVV/UPI PIN fields allowed."
+    },
+    "/refunds/{refundId}": {
+      "schema": { "$ref": "#/entities/Refund" },
+      "description": "Admin-initiated full and partial Razorpay refund records; owner/accountant/admin read-only, strictly admin/super_admin writes."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Protected 5-role staff & admin registry; readable by self, admin (view), or super_admin; writable exclusively by super_admin."
+    },
+    "/inventoryHistory/{movementId}": {
+      "schema": { "$ref": "#/entities/InventoryMovement" },
+      "description": "Immutable stock movement audit trail; readable by authorized staff, append-only create for inventory roles, never updatable or deletable."
+    },
+    "/activityLogs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Immutable administrative audit logs; readable by authorized roles, append-only create enforcing actorUid == request.auth.uid, never updatable or deletable."
+    },
+    "/adminNotifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/AdminNotification" },
+      "description": "Real-event administrative notifications; readable by active staff, readBy acknowledgments allowed, super_admin delete."
+    },
+    "/showroom/{sectionId}": {
+      "schema": { "$ref": "#/entities/ShowroomSectionDoc" },
+      "description": "3D Showroom section metadata; active sections publicly readable, writable exclusively by authorized store roles."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/StoreSettings" },
+      "description": "Global storefront settings; readable publicly for store config, writable exclusively by admin or super_admin."
+    }
+  }
+}
