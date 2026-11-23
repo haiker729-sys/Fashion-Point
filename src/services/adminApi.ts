@@ -9,6 +9,9 @@ import type {
 import type { OrderStatus } from '../types/commerce';
 import type { AdminPermission, StaffRole } from '../utils/adminPermissions';
 
+const API_BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) || '').replace(/\/+$/, '');
+const apiUrl = (path: string) => `${API_BASE}${path}`;
+
 async function getBearerHeaders(user: User | null): Promise<Record<string, string>> {
   if (!user) {
     throw new Error('Authentication required. Please sign in with a verified staff account.');
@@ -21,6 +24,12 @@ async function getBearerHeaders(user: User | null): Promise<Record<string, strin
 }
 
 async function parseJsonResponse<T>(resp: Response): Promise<T> {
+  const contentType = resp.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(
+      `Admin backend API is unreachable (${resp.status}). Deploy server.ts and configure VITE_API_BASE_URL if hosting static frontend separately.`
+    );
+  }
   const payload = (await resp.json().catch(() => ({}))) as T & {
     error?: string;
     code?: string;
@@ -44,7 +53,7 @@ export async function fetchServerStaffIdentity(
   user: User | null
 ): Promise<ServerStaffIdentityResponse> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/me', { method: 'GET', headers });
+  const resp = await fetch(apiUrl('/api/admin/me'), { method: 'GET', headers });
   return parseJsonResponse<ServerStaffIdentityResponse>(resp);
 }
 
@@ -54,7 +63,7 @@ export async function updateOrderStatusApi(
   payload: { orderStatus: OrderStatus; reason: string }
 ): Promise<{ ok: boolean; orderId: string; orderStatus: OrderStatus; paymentStatus: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/status`, {
+  const resp = await fetch(apiUrl(`/api/admin/orders/${encodeURIComponent(orderId)}/status`), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -68,7 +77,7 @@ export async function addOrderNoteApi(
   text: string
 ): Promise<{ ok: boolean; orderId: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}/notes`, {
+  const resp = await fetch(apiUrl(`/api/admin/orders/${encodeURIComponent(orderId)}/notes`), {
     method: 'POST',
     headers,
     body: JSON.stringify({ text }),
@@ -96,7 +105,7 @@ export async function adjustInventoryStockApi(
   totalProductStock: number;
 }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/inventory/adjust', {
+  const resp = await fetch(apiUrl('/api/admin/inventory/adjust'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -110,7 +119,7 @@ export async function validateCouponServerApi(
   subtotal: number
 ): Promise<{ valid: boolean; discount: number; message: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/coupons/validate', {
+  const resp = await fetch(apiUrl('/api/admin/coupons/validate'), {
     method: 'POST',
     headers,
     body: JSON.stringify({ code, subtotal }),
@@ -134,7 +143,7 @@ export async function saveCouponApi(
   }
 ): Promise<{ ok: boolean; code: string; created: boolean }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/coupons', {
+  const resp = await fetch(apiUrl('/api/admin/coupons'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -147,7 +156,7 @@ export async function deleteCouponApi(
   code: string
 ): Promise<{ ok: boolean; code: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/coupons/${encodeURIComponent(code)}`, {
+  const resp = await fetch(apiUrl(`/api/admin/coupons/${encodeURIComponent(code)}`), {
     method: 'DELETE',
     headers,
   });
@@ -166,7 +175,7 @@ export async function saveStaffMemberApi(
   }
 ): Promise<{ ok: boolean; uid: string; role: StaffRole; active: boolean }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/staff', {
+  const resp = await fetch(apiUrl('/api/admin/staff'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -179,7 +188,7 @@ export async function deleteStaffMemberApi(
   uid: string
 ): Promise<{ ok: boolean; uid: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/staff/${encodeURIComponent(uid)}`, {
+  const resp = await fetch(apiUrl(`/api/admin/staff/${encodeURIComponent(uid)}`), {
     method: 'DELETE',
     headers,
   });
@@ -193,7 +202,7 @@ export async function updateCustomerStatusApi(
   reason: string
 ): Promise<{ ok: boolean; uid: string; accountStatus: CustomerAccountStatus }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/customers/${encodeURIComponent(uid)}/status`, {
+  const resp = await fetch(apiUrl(`/api/admin/customers/${encodeURIComponent(uid)}/status`), {
     method: 'POST',
     headers,
     body: JSON.stringify({ accountStatus, reason }),
@@ -207,7 +216,7 @@ export async function addCustomerSupportNoteApi(
   payload: { subject: string; summary: string; status: 'open' | 'resolved' }
 ): Promise<{ ok: boolean; uid: string }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch(`/api/admin/customers/${encodeURIComponent(uid)}/support`, {
+  const resp = await fetch(apiUrl(`/api/admin/customers/${encodeURIComponent(uid)}/support`), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -227,7 +236,7 @@ export async function appendActivityLogApi(
   if (!user) return;
   try {
     const headers = await getBearerHeaders(user);
-    await fetch('/api/admin/activity-logs', {
+    await fetch(apiUrl('/api/admin/activity-logs'), {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
@@ -247,7 +256,7 @@ export async function downloadAdminReportCsvApi(
   }
 ): Promise<{ filename: string; rowCount: number }> {
   const headers = await getBearerHeaders(user);
-  const resp = await fetch('/api/admin/reports/export', {
+  const resp = await fetch(apiUrl('/api/admin/reports/export'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),

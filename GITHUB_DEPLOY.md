@@ -29,20 +29,22 @@ In your GitHub repository, go to **Settings → Secrets and variables → Action
 - `VITE_FIREBASE_STORAGE_BUCKET`
 - `VITE_FIREBASE_MESSAGING_SENDER_ID`
 - `VITE_FIREBASE_APP_ID`
+- `VITE_FIREBASE_DATABASE_ID` (optional if using non-default Firestore database)
 - `VITE_RAZORPAY_KEY_ID` (optional public Razorpay Key ID)
+- `VITE_API_BASE_URL` (optional, e.g. `https://your-backend.run.app` if pairing GitHub Pages with a remote Node.js backend)
 
-Also add your deployed domain to **Firebase Console → Authentication → Settings → Authorized domains** so Google Sign-In works on your live URL.
+Also add your deployed domain (for example `haiker729-sys.github.io`) to **Firebase Console → Authentication → Settings → Authorized domains** so Google Sign-In works on your live URL.
 
 ---
 
 ## 3. Automated GitHub Builds Included
 
 ### A. Continuous Integration (`.github/workflows/ci-build.yml`)
-Runs on every push and pull request to `main`:
-- `npm install`
-- `npm run lint` (`tsc --noEmit`)
-- `npx eslint firestore.rules`
-- `npm run build` (production Vite build)
+Runs on every push and pull request to `main`/`master` using Bun (`bun.lock`, with automatic `bun install` fallback):
+- `bun install --frozen-lockfile` (or `bun install`)
+- `bun run lint` (`tsc --noEmit`)
+- `bunx eslint firestore.rules`
+- `bun run build` (production Vite build)
 
 ### B. Static Frontend Hosting on GitHub Pages (`.github/workflows/deploy-pages.yml`)
 To publish the storefront & 3D Showroom on GitHub Pages:
@@ -50,7 +52,7 @@ To publish the storefront & 3D Showroom on GitHub Pages:
 2. Under **Build and deployment → Source**, select **GitHub Actions**.
 3. Push to `main` (or trigger **Deploy Frontend to GitHub Pages** manually in the **Actions** tab).
 
-> **Important (Backend APIs):** GitHub Pages hosts static frontend files only. Customer browsing, 3D Showroom, Firebase Auth, and Firestore work on GitHub Pages, while Express backend routes (`/api/payments/*` for Razorpay verification/webhooks and `/api/admin/*` for server-validated admin actions & CSV exports) require a Node.js host.
+> **Important (Backend APIs):** GitHub Pages hosts static frontend files only. Customer browsing, 3D Showroom, Firebase Auth, and Firestore work on GitHub Pages, while Express backend routes (`/api/payments/*` for Razorpay verification/webhooks and `/api/admin/*` for server-validated admin actions & CSV exports) require a Node.js host. To connect GitHub Pages to a separately hosted backend, set `VITE_API_BASE_URL` in GitHub Secrets and `CORS_ALLOWED_ORIGIN=https://<username>.github.io` on the Node.js backend.
 
 ---
 
@@ -58,7 +60,7 @@ To publish the storefront & 3D Showroom on GitHub Pages:
 
 For complete Phases 1–8 functionality (including Razorpay payments, webhooks, and `/api/admin/*`), connect your GitHub repository to a Node.js host such as **Google Cloud Run**, **Render**, or **Railway**:
 
-- **Build Command:** `npm install && npm run build`
+- **Build Command:** `bun install && bun run build` (or `npm install && npm run build`)
 - **Start Command:** `npm start` (`node server.ts` on Node.js 22+)
 - **Port:** `3000` (or platform `PORT` env var)
 - **Server Environment Variables:**
@@ -66,4 +68,5 @@ For complete Phases 1–8 functionality (including Razorpay payments, webhooks, 
   - `RAZORPAY_KEY_ID`
   - `RAZORPAY_KEY_SECRET`
   - `RAZORPAY_WEBHOOK_SECRET`
+  - `CORS_ALLOWED_ORIGIN` (only needed if serving frontend from GitHub Pages)
   - `VITE_FIREBASE_*` and `VITE_RAZORPAY_KEY_ID`

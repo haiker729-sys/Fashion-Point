@@ -741,13 +741,32 @@ export interface ResilientImageProps {
   fallbackTitle?: string;
 }
 
+const resolveAssetUrl = (rawSrc: string): string => {
+  if (!rawSrc) return rawSrc;
+  if (
+    rawSrc.startsWith('http://') ||
+    rawSrc.startsWith('https://') ||
+    rawSrc.startsWith('data:') ||
+    rawSrc.startsWith('blob:')
+  ) {
+    return rawSrc;
+  }
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
+  if (!base || base === '/') return rawSrc;
+  if (rawSrc.startsWith(`${base}/`)) return rawSrc;
+  if (rawSrc.startsWith('/')) return `${base}${rawSrc}`;
+  return `${base}/${rawSrc}`;
+};
+
 export const ResilientImage: React.FC<ResilientImageProps> = ({
   src,
   alt,
   className = '',
   fallbackTitle,
 }) => {
-  const [errored, setErrored] = useState(false);
+  const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+  const resolvedSrc = resolveAssetUrl(src);
+  const errored = erroredSrc === resolvedSrc;
 
   if (errored) {
     return (
@@ -762,10 +781,10 @@ export const ResilientImage: React.FC<ResilientImageProps> = ({
 
   return (
     <img
-      src={src}
+      src={resolvedSrc}
       alt={alt}
       referrerPolicy="no-referrer"
-      onError={() => setErrored(true)}
+      onError={() => setErroredSrc(resolvedSrc)}
       className={className}
       loading="lazy"
     />

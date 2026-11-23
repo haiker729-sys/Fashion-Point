@@ -13,10 +13,27 @@ async function startServer() {
   const app = express();
   app.disable('x-powered-by');
 
-  // Security headers
-  app.use((_req, res, next) => {
+  // Security headers + optional strict CORS allowlist (for separate GitHub Pages frontend)
+  const allowedOrigins = (process.env.CORS_ALLOWED_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    const reqOrigin = req.headers.origin;
+    if (req.path.startsWith('/api') && reqOrigin && allowedOrigins.includes(reqOrigin)) {
+      res.setHeader('Access-Control-Allow-Origin', reqOrigin);
+      res.setHeader('Vary', 'Origin');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+      if (req.method === 'OPTIONS') {
+        res.status(204).end();
+        return;
+      }
+    }
     next();
   });
 

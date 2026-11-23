@@ -8,6 +8,9 @@ import type {
   VerifyPaymentResponse,
 } from '../types/payment';
 
+const API_BASE = ((import.meta.env.VITE_API_BASE_URL as string | undefined) || '').replace(/\/+$/, '');
+const apiUrl = (path: string) => `${API_BASE}${path}`;
+
 async function getAuthHeaders(user: User): Promise<Record<string, string>> {
   const token = await user.getIdToken();
   return {
@@ -29,7 +32,7 @@ async function parseJsonResponse<T>(res: Response): Promise<T> {
 }
 
 export async function fetchRazorpayConfig(): Promise<RazorpayConfigResponse> {
-  const res = await fetch('/api/payments/config');
+  const res = await fetch(apiUrl('/api/payments/config'));
   return parseJsonResponse<RazorpayConfigResponse>(res);
 }
 
@@ -38,7 +41,7 @@ export async function createRazorpayPaymentOrder(
   user: User
 ): Promise<CreatePaymentOrderResponse> {
   const headers = await getAuthHeaders(user);
-  const res = await fetch('/api/payments/create-order', {
+  const res = await fetch(apiUrl('/api/payments/create-order'), {
     method: 'POST',
     headers,
     body: JSON.stringify({ orderId }),
@@ -56,11 +59,15 @@ export async function verifyRazorpayPayment(
   user: User
 ): Promise<VerifyPaymentResponse> {
   const headers = await getAuthHeaders(user);
-  const res = await fetch('/api/payments/verify', {
+  const res = await fetch(apiUrl('/api/payments/verify'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
   });
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error(`Payment verification server returned unexpected response (${res.status}).`);
+  }
   const body = (await res.json()) as VerifyPaymentResponse;
   if (!res.ok && res.status !== 202) {
     throw new Error(body.error || 'Payment verification failed on the server.');
@@ -73,7 +80,7 @@ export async function fetchOrderPaymentStatus(
   user: User
 ): Promise<PaymentStatusResponse> {
   const headers = await getAuthHeaders(user);
-  const res = await fetch(`/api/payments/status/${encodeURIComponent(orderId)}`, {
+  const res = await fetch(apiUrl(`/api/payments/status/${encodeURIComponent(orderId)}`), {
     method: 'GET',
     headers,
   });
@@ -90,7 +97,7 @@ export async function initiateAdminRefund(
   user: User
 ): Promise<{ refund: RefundRecordDoc; firestoreSynced: boolean }> {
   const headers = await getAuthHeaders(user);
-  const res = await fetch('/api/payments/refund', {
+  const res = await fetch(apiUrl('/api/payments/refund'), {
     method: 'POST',
     headers,
     body: JSON.stringify(payload),
@@ -100,7 +107,7 @@ export async function initiateAdminRefund(
 
 export async function fetchAdminPaymentSummary(user: User): Promise<AdminPaymentSummaryResponse> {
   const headers = await getAuthHeaders(user);
-  const res = await fetch('/api/payments/admin-summary', {
+  const res = await fetch(apiUrl('/api/payments/admin-summary'), {
     method: 'GET',
     headers,
   });
