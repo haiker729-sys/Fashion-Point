@@ -13,7 +13,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { isFirebaseConfigured } from '../../firebase/firebaseConfig';
-import { uploadProductImageToFirebaseStorage } from '../../firebase/storage';
+import { uploadImageToFirebaseStorage } from '../../firebase/storage';
 import type { CatalogCategory, ProductVisibilityStatus } from '../../types/catalog';
 import { Button, InputField, ProductBadge, ResilientImage, StatusAlert } from '../ui/Primitives';
 import { ConfirmationDialog, useToast } from '../ui/Overlays';
@@ -59,11 +59,11 @@ export const AdminCategoriesView: React.FC = () => {
     }
     setUploadingImageFor(targetCatId);
     try {
-      const uploaded = await uploadProductImageToFirebaseStorage(file, {
-        productId: `category-${targetCatId}`,
-        viewType: 'Front View',
-        order: 0,
-        isMain: true,
+      const uploaded = await uploadImageToFirebaseStorage({
+        file,
+        folder: 'categories',
+        entityId: targetCatId === 'new' ? 'new-category' : targetCatId,
+        label: 'category-banner',
       });
       if (targetCatId === 'new') {
         setNewCatImage(uploaded.url);
@@ -336,7 +336,7 @@ export const AdminCategoriesView: React.FC = () => {
                               ? 'success'
                               : status === 'draft'
                                 ? 'warning'
-                                : 'neutral'
+                                : 'surface'
                           }
                         >
                           {status}

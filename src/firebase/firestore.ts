@@ -603,11 +603,12 @@ export async function deleteCategoryInFirestore(categoryId: string): Promise<voi
 export async function reorderCategoriesInFirestore(
   orderedIds: string[]
 ): Promise<void> {
-  if (!db || orderedIds.length === 0) return;
+  const firestoreDb = db;
+  if (!firestoreDb || orderedIds.length === 0) return;
   try {
-    const batch = writeBatch(db);
+    const batch = writeBatch(firestoreDb);
     orderedIds.forEach((id, idx) => {
-      batch.update(doc(db, COLLECTIONS.CATEGORIES, id), {
+      batch.update(doc(firestoreDb, COLLECTIONS.CATEGORIES, id), {
         sortOrder: idx,
         updatedAt: serverTimestamp(),
       });

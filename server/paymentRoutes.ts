@@ -1064,7 +1064,7 @@ export function createPaymentRouter(overrides: PaymentRouterDeps = {}): Router {
   const inFlightRefundOrders = new Set<string>();
   const refundRateLimiter = createRateLimiter({
     windowMs: 60_000,
-    max: 25,
+    maxRequests: 25,
     keyPrefix: 'payment-refund',
   });
 

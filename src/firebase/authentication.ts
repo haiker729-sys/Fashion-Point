@@ -159,7 +159,7 @@ export async function resolveTrustedStaffSession(user: User | null): Promise<Res
         active?: boolean;
         permissions?: string[];
       };
-      if (data.active === true && isStaffRole(data.role)) {
+      if (data.active === true && typeof data.role === 'string' && isStaffRole(data.role)) {
         const customPerms = Array.isArray(data.permissions)
           ? (data.permissions as AdminPermission[])
           : undefined;

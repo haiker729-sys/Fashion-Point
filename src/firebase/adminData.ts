@@ -174,9 +174,11 @@ export function subscribeAllCoupons(
       const items: CouponDoc[] = snap.docs
         .map((d) => {
           const data = d.data() as Record<string, unknown>;
+          const couponType: CouponDoc['type'] =
+            data.type === 'fixed' ? 'fixed' : 'percentage';
           return {
             code: String(data.code || d.id).toUpperCase(),
-            type: data.type === 'fixed' ? 'fixed' : 'percentage',
+            type: couponType,
             value: Number(data.value || 0),
             minOrderValue: Number(data.minOrderValue || 0),
             maxDiscount: Number(data.maxDiscount || 0),
@@ -432,7 +434,7 @@ export async function saveShowroomSectionConfig(
       sectionId: section.sectionId,
       title: section.title.slice(0, 120),
       lightingPreset: section.lightingPreset,
-      featuredProductIds: section.featuredProductIds.slice(0, 40),
+      featuredProductIds: section.featuredProductIds.slice(0, 30),
       active: Boolean(section.active),
     };
     if (isExisting) {
