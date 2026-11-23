@@ -1,4 +1,5 @@
 import {
+  arrayUnion,
   collection,
   doc,
   limit,
@@ -254,21 +255,23 @@ export function subscribeInventoryHistory(
       const items: InventoryMovementDoc[] = snap.docs
         .map((d) => {
           const data = d.data() as Record<string, unknown>;
+          const rawRole = String(data.actorRole || 'staff');
           return {
-            id: String(data.id || d.id),
+            movementId: String(data.movementId || d.id),
             productId: String(data.productId || ''),
             productName: String(data.productName || ''),
             variantId: String(data.variantId || ''),
-            sku: String(data.sku || ''),
-            size: String(data.size || ''),
+            variantSku: String(data.variantSku || data.sku || ''),
             colour: String(data.colour || ''),
+            size: String(data.size || ''),
             previousStock: Number(data.previousStock || 0),
             delta: Number(data.delta || 0),
             newStock: Number(data.newStock || 0),
             movementType: (data.movementType || 'manual_adjustment') as InventoryMovementDoc['movementType'],
             reason: String(data.reason || ''),
             actorUid: String(data.actorUid || ''),
-            actorEmail: String(data.actorEmail || ''),
+            actorName: String(data.actorName || data.actorEmail || 'Staff'),
+            actorRole: isStaffRole(rawRole) ? rawRole : 'staff',
             createdAt: timestampToIso(data.createdAt),
           };
         })
@@ -298,11 +301,13 @@ export function subscribeActivityLogs(
       const items: ActivityLogDoc[] = snap.docs
         .map((d) => {
           const data = d.data() as Record<string, unknown>;
+          const rawRole = String(data.actorRole || 'staff');
           return {
-            id: String(data.id || d.id),
+            logId: String(data.logId || d.id),
             actorUid: String(data.actorUid || ''),
             actorEmail: String(data.actorEmail || ''),
-            actorRole: String(data.actorRole || 'staff'),
+            actorName: String(data.actorName || data.actorEmail || 'Staff'),
+            actorRole: isStaffRole(rawRole) ? rawRole : 'staff',
             action: String(data.action || 'Product Updated') as ActivityLogDoc['action'],
             entityType: String(data.entityType || 'system'),
             entityId: String(data.entityId || ''),
@@ -337,14 +342,17 @@ export function subscribeAdminNotifications(
         .map((d) => {
           const data = d.data() as Record<string, unknown>;
           return {
-            id: String(data.id || d.id),
+            notificationId: String(data.notificationId || d.id),
             type: (data.type || 'new_order') as AdminNotificationDoc['type'],
             severity: (data.severity || 'info') as AdminNotificationDoc['severity'],
             title: String(data.title || 'Store Alert'),
             message: String(data.message || ''),
             entityId: String(data.entityId || ''),
-            read: Boolean(data.read),
+            readBy: Array.isArray(data.readBy)
+              ? (data.readBy.filter((x): x is string => typeof x === 'string'))
+              : [],
             createdAt: timestampToIso(data.createdAt),
+            updatedAt: timestampToIso(data.updatedAt || data.createdAt),
           };
         })
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -360,12 +368,16 @@ export function subscribeAdminNotifications(
   );
 }
 
-export async function markAdminNotificationRead(notificationId: string): Promise<void> {
-  if (!db) return;
+export async function markAdminNotificationRead(
+  notificationId: string,
+  uid: string
+): Promise<void> {
+  if (!db || !uid) return;
   const path = `${ADMIN_COLLECTIONS.ADMIN_NOTIFICATIONS}/${notificationId}`;
   try {
     await updateDoc(doc(db, ADMIN_COLLECTIONS.ADMIN_NOTIFICATIONS, notificationId), {
-      read: true,
+      readBy: arrayUnion(uid),
+      updatedAt: serverTimestamp(),
     });
   } catch (err) {
     handleFirestoreError(err, OperationType.UPDATE, path);

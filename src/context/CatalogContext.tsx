@@ -170,7 +170,7 @@ export const CatalogProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { user, isAdmin, isStaff, hasPermission, authReady } = useAuth();
   const canManageProducts = isAdmin || hasPermission('products:manage');
   const canManageCategories = isAdmin || hasPermission('categories:manage');
-  const canAdjustInventory = isAdmin || hasPermission('inventory:adjust');
+  const canAdjustInventory = isAdmin || hasPermission('inventory:update');
 
   // Local Phase 4 demo state (preserved intact for backup, migration, and empty-cloud fallback)
   const [localState, setLocalState] = useState<StoredCatalogState>(() => loadLocalDemoCatalog());

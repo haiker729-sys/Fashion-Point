@@ -26,7 +26,7 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
   const {
     user,
     role,
-    isAdmin,
+    isStaff,
     authReady,
     authBusy,
     authError,
@@ -59,13 +59,13 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
     );
   }
 
-  // Authorized Admin — unlock full Admin Console
-  if (user && isAdmin) {
+  // Authorized Staff Role (Super Admin, Admin, Manager, Staff, Accountant) — unlock Console
+  if (user && isStaff) {
     return <>{children}</>;
   }
 
-  // Authenticated Customer without Admin Privileges
-  if (user && !isAdmin) {
+  // Authenticated Customer without Staff/Admin Privileges
+  if (user && !isStaff) {
     return (
       <div className="min-h-screen bg-[#FFF8EF] text-[#1F1D2B] flex items-center justify-center p-6">
         <div className="max-w-lg w-full rounded-2xl border border-[#DC2626]/25 bg-white p-6 sm:p-8 shadow-xl space-y-6">
@@ -78,7 +78,7 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
                 Access Restricted · Role Verification Failed
               </p>
               <h1 className="mt-1 font-heading text-xl font-bold text-[#1F1D2B]">
-                Authorized Admin Account Required
+                Authorized Staff / Admin Account Required
               </h1>
               <p className="mt-2 text-sm text-[#1F1D2B]/75 leading-relaxed">
                 You are currently signed in as{' '}
@@ -86,16 +86,17 @@ export const AdminAuthGate: React.FC<AdminAuthGateProps> = ({
                 <span className="rounded bg-[#FFE4C7] px-1.5 py-0.5 font-mono text-xs font-semibold text-[#1F1D2B]">
                   {role}
                 </span>
-                . Admin write access is strictly verified via Firebase Authentication and the
-                protected Firestore <code className="font-mono text-xs">admins</code> collection.
+                . Dashboard access is strictly verified via Firebase Authentication and the
+                protected Firestore <code className="font-mono text-xs">admins</code> registry
+                (Super Admin, Admin, Manager, Staff, Accountant).
               </p>
             </div>
           </div>
 
           <StatusAlert
             variant="info"
-            title="How Admin Access Is Granted"
-            description="Sign in with the verified store owner Google account or ask a Super Admin to register your UID in Firestore admins/{uid}."
+            title="How Staff / Admin Access Is Granted"
+            description="Sign in with the verified store owner Google account or ask a Super Admin to assign your staff role in Firestore admins/{uid}."
           />
 
           <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-[#1F1D2B]/10">

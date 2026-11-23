@@ -87,13 +87,13 @@ export async function adjustInventoryStockApi(
     reason: string;
   }
 ): Promise<{
-  ok: boolean;
+  movementId: string;
   productId: string;
   variantId: string;
   previousStock: number;
   delta: number;
   newStock: number;
-  movementId: string;
+  totalProductStock: number;
 }> {
   const headers = await getBearerHeaders(user);
   const resp = await fetch('/api/admin/inventory/adjust', {

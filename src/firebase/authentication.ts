@@ -144,7 +144,7 @@ export async function resolveTrustedStaffSession(user: User | null): Promise<Res
     return {
       role: 'super_admin',
       isStaff: true,
-      permissions: resolveRolePermissions('super_admin'),
+      permissions: Array.from(resolveRolePermissions('super_admin')),
     };
   }
 
@@ -166,7 +166,7 @@ export async function resolveTrustedStaffSession(user: User | null): Promise<Res
         return {
           role: data.role,
           isStaff: true,
-          permissions: resolveRolePermissions(data.role, customPerms),
+          permissions: Array.from(resolveRolePermissions(data.role, customPerms)),
         };
       }
     }
